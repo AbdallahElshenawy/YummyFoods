@@ -1,0 +1,114 @@
+﻿@page "/Product"
+@using System.Globalization
+@inject IProductRepository productRepository
+@inject IJSRuntime jsRuntime
+<BSModal OnModalConfirmation="ConfirmDeleteProduct"
+    ButtonBootStrapStyle="btn-danger"
+    ButtonText="Delete"
+    ModalTitle="Are you sure you want to delete this product?"></BSModal>
+@if (isLoading)
+{
+    <div class="position-absolute w-75 h-75 d-flex flex-column align-items-center bg-white justify-content-center">
+        <img src="images/loading.gif" alt="Loading..."/>
+    </div>
+}
+else
+{
+    <div class="card shadow border-0 mt-4">
+        <div class ="card-header bg-black bg-gradient ml-0 py-3">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h2 class="text-white py-2">Product List</h2>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-4">
+            <div class="row pb-3">
+                <div class="col-12 text-end">
+                    <a href="Product/Create" class="btn btn-lg btn-secondary" style="width:250px;">
+                        <i class="bi bi-plus-square"></i> Add New Product</a>
+                </div>
+            </div>
+            @if(products.Any())
+            {
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Price</th>
+                            <th>Special Tag</th>
+                            <th>Category</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var product in products)
+                        {
+                            <tr>
+                                <td>@product.Name</td>
+                                 <td>@product.Price.ToString("C",CultureInfo.GetCultureInfo("en-us"))</td>
+                                 <td>@product.SpecialTag</td>
+                                <td>@product.Category?.Name</td>
+                                <td>
+                                    <a href="@($"Product/Update/{product.Id}")" class="btn btn-primary">
+                                        <i class="bi bi-pencil-square"></i> Edit
+                                    </a>
+                                    <button class="btn btn-danger" @onclick="()=>HandelDelete(product.Id)">
+                                        <i class="bi bi-trash3"></i> Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div> 
+}
+@code {
+    private bool isLoading { get; set; } = true;
+    private IEnumerable<Product> products { get; set; } = new List<Product>();
+    private int productId { get; set; } = 0;   
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if(firstRender)
+        {
+            await LoadProducts();
+            isLoading = false;
+            StateHasChanged();
+        }
+        //return base.OnAfterRenderAsync(firstRender);
+    }
+    private async Task LoadProducts()
+    {
+        products = await productRepository.GetAllAsync();
+    }
+    private void HandelDelete(int id) 
+    {
+        productId = id;
+        jsRuntime.InvokeVoidAsync("ShowConfirmationModal");
+    }
+    private async Task ConfirmDeleteProduct(bool isConfirmed)
+    {
+        isLoading = true;
+        await jsRuntime.InvokeVoidAsync("HideConfirmationModal");
+        if (isConfirmed && productId != 0)
+        {
+            var result = await productRepository.DeleteAsync(productId);
+            if(result)
+                jsRuntime?.ToasterSuccess("Product deleted successfully");
+            else
+                jsRuntime?.ToasterError("Some Error Happened");
+
+            await LoadProducts();
+
+        }
+        productId = 0;
+        isLoading = false;
+       
+    }
+}
