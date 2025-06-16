@@ -1,0 +1,92 @@
+﻿@page "/Category/Update/{id:int}"
+@page "/Category/Create"
+@inject ICategoryRepository categoryRepository
+@inject NavigationManager navigationManager
+@inject IJSRuntime jsRuntime
+
+@if (isLoading)
+{
+    <div class="position-absolute w-75 h-75 d-flex flex-column align-items-center bg-white justify-content-center">
+        <img src="images/loading.gif" alt="Loading..." />
+    </div>
+}
+else
+{
+    <div class="card shadow border-0 mt-4">
+        <div class="card-header bg-black bg-gradient ml-0 py-3">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h2 class="text-white py-2">@(Id>0? "Create":"Update")Category</h2>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-4">
+            <EditForm Model="Category" FormName="CategoryForm" OnValidSubmit="UpsertCategory">
+                <DataAnnotationsValidator />
+                <div class="border p-3 mt-4">
+                    <div class="form-floating py-3 col-12">
+                        <InputText id="name" class="form-control" @bind-Value="Category.Name" />
+                        <label for="name">Name</label>
+                        <ValidationMessage For="@(() => Category.Name)" />
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-6 col-md-3">
+                            <button type="submit" class="btn btn-primary form-control" disabled="@isLoading">
+                                <i class="bi bi-floppy2-fill"></i> Update
+                            </button>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="category" class="btn btn-secondary form-control" disabled="@isLoading">
+                                <i class="bi bi-arrow-bar-left"></i> Back to list
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </EditForm> 
+    
+        </div>
+    </div>
+}
+@code {
+    [Parameter]
+    public int Id { get; set; }
+    private bool isLoading { get; set; } = true;
+    [SupplyParameterFromForm]
+    public Category Category { get; set; } = new Category();
+   
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadCategory();
+            isLoading = false;
+            StateHasChanged();
+        }
+        //return base.OnAfterRenderAsync(firstRender);
+    }
+    private async Task LoadCategory()
+    {
+        if (Id > 0)
+        {
+            Category = await categoryRepository.GetAsync(Id);
+        }
+    }
+    private async Task UpsertCategory()
+    {
+        isLoading = true;
+        if (Id ==0)
+        {
+            await categoryRepository.CreateAsync(Category);
+            await jsRuntime.ToasterSuccess("Category created successfully!");
+        }
+        else
+        {
+            await categoryRepository.UpdateAsync(Category);
+            await jsRuntime.ToasterSuccess("Category updated successfully!");
+
+
+        }
+        isLoading = false;
+        navigationManager.NavigateTo("Category");
+    }
+}
