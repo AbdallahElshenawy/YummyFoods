@@ -1,18 +1,19 @@
 ﻿@inherits LayoutComponentBase
+@using YummyFoods.Utility
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+    <AuthorizeView Roles="@StaticDetails.RoleAdmin">
+        <div class="sidebar">
+            <NavMenu />
         </div>
-
-        <article class="content px-4">
+    </AuthorizeView>
+    <main>
+        @if(NavBarVisible)
+        {
+            <NavBar></NavBar>
+        }
             @Body
-        </article>
     </main>
 </div>
 
@@ -21,3 +22,35 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+@code{
+    private bool NavBarVisible { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        NavBarVisible = await ShowNavBar();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            NavBarVisible = await ShowNavBar();
+        }
+    }
+
+    private async Task<bool> ShowNavBar()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var authenticated = user.Identity is not null && user.Identity.IsAuthenticated;
+        if (!authenticated)
+        {
+            return true;
+        }
+        if (!user.IsInRole(StaticDetails.RoleAdmin))
+        {
+            return true;
+        }
+        return false;
+    }
+}
