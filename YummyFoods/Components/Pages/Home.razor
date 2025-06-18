@@ -2,7 +2,10 @@
 @using System.Globalization
 @inject YummyFoods.Repository.IRepository.IProductRepository productRepository
 @inject YummyFoods.Repository.IRepository.ICategoryRepository categoryRepository
-
+@inject AuthenticationStateProvider AuthenticationStateProvider;
+@inject IJSRuntime JsRuntime;
+@inject NavigationManager NavigationManager;
+@inject IShoppingCartRepository shoppingCartRepository;
 <PageTitle>Home</PageTitle>
 @if (IsLoading)
 {
@@ -70,7 +73,9 @@ else
                                 <h5 class="card-title text-center lead text-success">@product.Name</h5>
                                 <p class="card-text mt-2">@((MarkupString)@product.Description)</p>
                                 <h4 class="text-center">
-                                    <i class="bi bi-cart3 btn btn-success text-right  px-5 form-control"> Add to cart</i>
+                                    <div class=" m-lg-auto p-2"@onclick="()=>AddOrderItem(product)">
+                                        <i class="bi bi-cart3 btn btn-success text-right  px-5 form-control"> Add to cart</i>
+                                    </div>
                                 </h4>
                             </div>
                         </div>
@@ -118,7 +123,7 @@ else
             selectedCategoryId = categoryid;
             searchText = string.Empty;
         }
-      
+
     }
     private void SeaerchProducts(string searchtext)
     {
@@ -136,6 +141,33 @@ else
     private string GetClassActive(int categoryid)
     {
         return categoryid == selectedCategoryId ? "active" : string.Empty;
+    }
+
+    private async Task AddOrderItem(Product product)
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var authenticated = user.Identity is not null && user.Identity.IsAuthenticated;
+        if(!authenticated)
+        {
+            NavigationManager.NavigateTo("Account/Login");
+           
+        }
+        else
+        {
+            var result = await shoppingCartRepository.UpdateCartAsync(user.FindFirst(u => u.Type.Contains("nameidentifier"))?.Value, product.Id, 1);
+
+            if(result)
+            {
+                JsRuntime?.ToasterSuccess("Product added to cart successuflly");
+            }
+            else
+            {
+                JsRuntime?.ToasterError("An error happened");
+
+            }
+        }
+         
     }
 
 }

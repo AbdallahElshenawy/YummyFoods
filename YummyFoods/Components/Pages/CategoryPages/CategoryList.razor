@@ -62,10 +62,7 @@ else
     private bool isLoading { get; set; } = true;
     private IEnumerable<Category> categories { get; set; } = new List<Category>();
     private int categoryId { get; set; } = 0;   
-    protected override async Task OnInitializedAsync()
-    {
-
-    }
+   
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if(firstRender)
