@@ -1,9 +1,12 @@
 ﻿@page "/cart"
 @using Microsoft.AspNetCore.Authorization
 @using System.Globalization
-
+@using YummyFoods.Utility
 @inject AuthenticationStateProvider AuthenticationStateProvider;
 @inject IShoppingCartRepository shoppingCartRepository;
+@inject IOrderRepository orderRepository;
+@inject NavigationManager NavigationManager;
+@inject SharedStateService sharedStateService;
 @attribute [Authorize]
 
 @if (IsLoading)
@@ -70,7 +73,7 @@ else
                     <div class="card-header text-success text-center display-6">
                         Pickup Details
                     </div>
-                    <EditForm Model="orderHeader" FormName="CartForm" OnInvalidSubmit="ProceesOrderCreation">
+                    <EditForm Model="orderHeader" FormName="CartForm" OnvalidSubmit="ProceesOrderCreation">
                         <DataAnnotationsValidator />
                         <div class="card-body">
                             <div class="form-group">
@@ -131,9 +134,7 @@ else
         var user = authState.User;
         orderHeader.Email = user.FindFirst(u => u.Type.Contains("email"))?.Value;
         orderHeader.UserId = user.FindFirst(u => u.Type.Contains("nameidentifier"))?.Value;
-        await LoadCart();
-        IsLoading = false;
-        StateHasChanged();
+        orderHeader.Status = StaticDetails.StatusPending;
     }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -159,12 +160,17 @@ else
 
     private async Task UpdateCartItem(int productId, int updateBy)
     {
-       
         var result = await shoppingCartRepository.UpdateCartAsync(orderHeader.UserId, productId, updateBy);
+        sharedStateService.TotalCartCount = await shoppingCartRepository.GetTotalCartCountAsync(orderHeader.UserId);
         await LoadCart();
-        StateHasChanged();
     }
     private async Task ProceesOrderCreation()
     { 
+        IsLoading = true;
+        await Task.Yield();
+        orderHeader.OrderDetails = StaticDetails.ConvertShoppingCartListToOrderDetail(shoppingCarts.ToList());
+        await orderRepository.CreateAsync(orderHeader);
+        NavigationManager.NavigateTo($"/order/confirmation/{orderHeader.Id}");
     }
+
 }

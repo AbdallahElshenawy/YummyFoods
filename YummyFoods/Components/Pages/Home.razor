@@ -6,6 +6,7 @@
 @inject IJSRuntime JsRuntime;
 @inject NavigationManager NavigationManager;
 @inject IShoppingCartRepository shoppingCartRepository;
+@inject SharedStateService sharedStateService;
 <PageTitle>Home</PageTitle>
 @if (IsLoading)
 {
@@ -151,12 +152,13 @@ else
         if(!authenticated)
         {
             NavigationManager.NavigateTo("Account/Login");
-           
+
         }
         else
         {
-            var result = await shoppingCartRepository.UpdateCartAsync(user.FindFirst(u => u.Type.Contains("nameidentifier"))?.Value, product.Id, 1);
-
+            var userId = user.FindFirst(u => u.Type.Contains("nameidentifier"))?.Value;
+            var result = await shoppingCartRepository.UpdateCartAsync(userId, product.Id, 1);
+            sharedStateService.TotalCartCount = await shoppingCartRepository.GetTotalCartCountAsync(userId);
             if(result)
             {
                 JsRuntime?.ToasterSuccess("Product added to cart successuflly");

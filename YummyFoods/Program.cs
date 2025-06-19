@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Radzen;
 using YummyFoods.Components;
 using YummyFoods.Components.Account;
 using YummyFoods.Data;
 using YummyFoods.Repository;
 using YummyFoods.Repository.IRepository;
+using YummyFoods.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,9 +19,12 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<ICategoryRepository,CategoryRepository>();
 builder.Services.AddScoped<IProductRepository,ProductRepository>();
 builder.Services.AddScoped<IShoppingCartRepository,ShoppingCartRepository>();
+builder.Services.AddScoped<IOrderRepository,OrderRepository>();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+builder.Services.AddRadzenComponents();
+builder.Services.AddSingleton<SharedStateService>();
 
 builder.Services.AddAuthentication(options =>
     {
@@ -32,7 +37,7 @@ builder.Services.AddAuthorization();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(connectionString),ServiceLifetime.Scoped);
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
