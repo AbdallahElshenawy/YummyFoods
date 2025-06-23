@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Radzen;
+using Stripe;
 using YummyFoods.Components;
 using YummyFoods.Components.Account;
 using YummyFoods.Data;
@@ -25,6 +26,7 @@ builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 builder.Services.AddRadzenComponents();
 builder.Services.AddSingleton<SharedStateService>();
+builder.Services.AddScoped<PaymentService>();
 
 builder.Services.AddAuthentication(options =>
     {
@@ -37,7 +39,7 @@ builder.Services.AddAuthorization();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString),ServiceLifetime.Scoped);
+    options.UseSqlServer(connectionString),ServiceLifetime.Transient);
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
@@ -49,7 +51,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
 var app = builder.Build();
-
+StripeConfiguration.ApiKey = app.Configuration.GetSection("StripeApiKey").Value;
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

@@ -22,6 +22,8 @@ namespace YummyFoods.Models
         [Required]
         public string Email { get; set; }
 
+        public string? SessionId { get; set; }
+        public string? PaymentId { get; set; }
         public ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
     
     }

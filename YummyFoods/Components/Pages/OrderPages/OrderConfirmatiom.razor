@@ -1,7 +1,9 @@
-﻿@page "/order/confirmation/{orderId:int}"
+﻿@page "/order/confirmation/{sessionId}"
 @using YummyFoods.Services
 @using YummyFoods.Utility
 @inject IOrderRepository orderRepository
+@inject PaymentService paymentService
+@inject IShoppingCartRepository shoppingCartRepository
 @if (IsLoading)
 {
     <div class="position-absolute w-100 vh-100 d-flex flex-column align-items-center bg-white justify-content-center">
@@ -23,14 +25,19 @@ else
 
 @code {
     [Parameter]
-    public int orderId { get; set; }
+    public string sessionId { get; set; }
 
     private bool IsLoading { get; set; } = true;
     private OrderHeader orderHeader { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        orderHeader = await orderRepository.GetAsync(orderId);
+        orderHeader = await orderRepository.GetOrderBySessionIdAsync(sessionId);
+        orderHeader = await paymentService.CheckPaymentStatusAndUpdateOrder(sessionId);
+        if(orderHeader.Status == StaticDetails.StatusApproved)
+        {
+            await shoppingCartRepository.ClearCartAsync(orderHeader.UserId);
+        }
         IsLoading = false;
     }
 }

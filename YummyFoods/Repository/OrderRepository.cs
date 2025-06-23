@@ -29,13 +29,22 @@ namespace YummyFoods.Repository
             return await context.OrderHeaders.Include(u => u.OrderDetails).FirstOrDefaultAsync(u => u.Id == id);
         }
 
+        public async Task<OrderHeader> GetOrderBySessionIdAsync(string sessionId)
+        {
+            return await context.OrderHeaders
+                .FirstOrDefaultAsync(u => u.SessionId == sessionId.ToString());
+        }
 
-        public async Task<OrderHeader> UpdateStatusAsync(int orderId, string status)
+        public async Task<OrderHeader> UpdateStatusAsync(int orderId, string status, string paymentId)
         {
             var orderHeader = context.OrderHeaders.FirstOrDefault(u => u.Id == orderId);
             if (orderHeader != null)
             {
                 orderHeader.Status = status;
+                if(!string.IsNullOrEmpty(paymentId))
+                {
+                    orderHeader.PaymentId = paymentId;
+                }
                 await context.SaveChangesAsync();
             }
             return orderHeader;

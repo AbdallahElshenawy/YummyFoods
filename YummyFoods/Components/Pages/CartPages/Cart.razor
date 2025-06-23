@@ -7,6 +7,7 @@
 @inject IOrderRepository orderRepository;
 @inject NavigationManager NavigationManager;
 @inject SharedStateService sharedStateService;
+@inject PaymentService paymentService
 @attribute [Authorize]
 
 @if (IsLoading)
@@ -169,8 +170,10 @@ else
         IsLoading = true;
         await Task.Yield();
         orderHeader.OrderDetails = StaticDetails.ConvertShoppingCartListToOrderDetail(shoppingCarts.ToList());
+        var session = paymentService.CreateStripeCheckoutSession(orderHeader);
+        orderHeader.SessionId = session.Id;
         await orderRepository.CreateAsync(orderHeader);
-        NavigationManager.NavigateTo($"/order/confirmation/{orderHeader.Id}");
+        NavigationManager.NavigateTo(session.Url);
     }
 
 }
