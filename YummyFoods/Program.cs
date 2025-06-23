@@ -34,13 +34,28 @@ builder.Services.AddAuthentication(options =>
         options.DefaultScheme = IdentityConstants.ApplicationScheme;
         options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
     })
-    .AddIdentityCookies();
+     .AddFacebook(options =>
+     {
+         options.AppId = "1160092848406864";
+         options.AppSecret = "a5313a1337e6d9f137b37ed2a4f7cc45";
+     })
+    .AddMicrosoftAccount(options =>
+    {
+        options.ClientId = "f2cc6e3d-dd2d-4faa-96ac-f823e9ad8ad3";
+        options.ClientSecret = "h4r8Q~.1Lu~T7G~hyu2IM-INw9JO8qiXuLsaiasX";
+    })
+    .AddGoogle(options =>
+    {
+        options.ClientId = "166243656096-u9jbr6vkb7nfvl1qrpe2ql8debo7dqbg.apps.googleusercontent.com";
+        options.ClientSecret = "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";
+    })
+.AddIdentityCookies();
 builder.Services.AddAuthorization();
 
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString),ServiceLifetime.Scoped);
+    options.UseSqlServer(connectionString),ServiceLifetime.Transient);
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
