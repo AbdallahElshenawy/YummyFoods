@@ -11,7 +11,8 @@ using YummyFoods.Repository.IRepository;
 using YummyFoods.Services;
 
 var builder = WebApplication.CreateBuilder(args);
-
+string stripeSecretKey = builder.Configuration["Stripe:SecretKey"];
+StripeConfiguration.ApiKey = stripeSecretKey;
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -39,7 +40,7 @@ builder.Services.AddAuthorization();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString),ServiceLifetime.Transient);
+    options.UseSqlServer(connectionString),ServiceLifetime.Scoped);
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
@@ -51,7 +52,6 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
 var app = builder.Build();
-StripeConfiguration.ApiKey = app.Configuration.GetSection("StripeApiKey").Value;
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
